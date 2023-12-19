@@ -3127,12 +3127,13 @@ int main(int argc, char *argv[])
     if (mol_opt=="protein" && atom_opt=="auto")
         atom_opt=" CA ";
     else if (mol_opt=="RNA" && atom_opt=="auto")
-        atom_opt=" C3'";
+        // atom_opt=" C3'"; // ORIGINAL
+        atom_opt=" C4'";
     if (atom_opt.size()!=4)
     {
         cerr<<"ERROR! Atom name must have 4 characters, including space.\n"
-              "For example, C alpha, C3' and P atoms should be specified by\n"
-              "-atom \" CA \", -atom \" P  \" and -atom \" C3'\", respectively."<<endl;
+              "For example, C alpha, C4' and P atoms should be specified by\n"
+              "-atom \" CA \", -atom \" P  \" and -atom \" C4'\", respectively."<<endl;
         if (atom_opt.size()>=5 || atom_opt.size()==0) return 1;
         else if (atom_opt.size()==1) atom_opt=" "+atom_opt+"  ";
         else if (atom_opt.size()==2) atom_opt=" "+atom_opt+" ";
