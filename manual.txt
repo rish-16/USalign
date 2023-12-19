@@ -1,0 +1,171 @@
+********************************************************************
+* US-align (Version 20230609)                                      *
+* Universal Structure Alignment of Proteins and Nucleic Acids      *
+* Reference: C Zhang, M Shine, AM Pyle, Y Zhang. (2022) Nat Methods*
+* Please email comments and suggestions to zhang@zhanggroup.org    *
+********************************************************************
+
+Usage: USalign PDB1.pdb PDB2.pdb [Options]
+
+Options:
+    -mol  Type of molecule(s) to align.
+          auto: (default) align both protein and nucleic acids.
+          prot: only align proteins in a structure.
+          RNA : only align RNA and DNA in a structure.
+
+     -mm  Multimeric alignment option:
+          0: (default) alignment of two monomeric structures
+          1: alignment of two multi-chain oligomeric structures
+          2: alignment of individual chains to an oligomeric structure
+             $ USalign -dir1 monomers/ list oligomer.pdb -ter 0 -mm 2
+          3: alignment of circularly permuted structure
+          4: alignment of multiple monomeric chains into a consensus alignment
+             $ USalign -dir chains/ list -suffix .pdb -mm 4
+          5: fully non-sequential (fNS) alignment
+          6: semi-non-sequential (sNS) alignment
+          To use -mm 1 or -mm 2, '-ter' option must be 0 or 1.
+
+    -ter  Number of chains to align.
+          3: only align the first chain, or the first segment of the
+             first chain as marked by the 'TER' string in PDB file
+          2: (default) only align the first chain
+          1: align all chains of the first model (recommended for aligning
+             asymmetric units)
+          0: align all chains from all models (recommended for aligning
+             biological assemblies, i.e. biounits)
+
+    -TMscore Whether to perform TM-score superposition without structure-based
+          alignment. The same as -byresi.
+          0: (default) sequence independent structure alignment
+          1: superpose two structures by assuming that a pair of residues
+             with the same residue index are equivalent between the two
+             structures
+          2: superpose two complex structures, assuming that a pair of
+             residues with the same residue index and the same chain ID
+             are equivalent between the two structures
+          5: sequence dependent alignment: perform glocal sequence
+             alignment followed by TM-score superposition.
+             -byresi 5 is the same as -seq
+          6: superpose two complex structures by first deriving optimal
+             chain mapping, followed by TM-score superposition for residues
+             with the same residue ID
+          7: sequence dependent alignment of two complex structures:
+             perform global sequence alignment of each chain pair, derive
+             optimal chain mapping, and then superpose two complex
+             structures by TM-score
+
+      -I  Use the final alignment specified by FASTA file 'align.txt'
+
+      -i  Use alignment specified by 'align.txt' as an initial alignment
+
+      -m  Output rotation matrix for superposition
+
+      -d  TM-score scaled by an assigned d0, e.g., '-d 3.5' reports MaxSub
+          score, where d0 is 3.5 Angstrom. -d does not change final alignment.
+
+      -u  TM-score normalized by an assigned length. It should be >= length
+          of protein to avoid TM-score >1. -u does not change final alignment.
+
+      -o  Output superposed structure1 to sup.* for PyMOL viewing.
+          $ USalign structure1.pdb structure2.pdb -o sup
+          $ pymol -d @sup.pml                # C-alpha trace aligned region
+          $ pymol -d @sup_all.pml            # C-alpha trace whole chain
+          $ pymol -d @sup_atm.pml            # full-atom aligned region
+          $ pymol -d @sup_all_atm.pml        # full-atom whole chain
+          $ pymol -d @sup_all_atm_lig.pml    # full-atom with all molecules
+
+    -rasmol  Output superposed structure1 to sup.* for RasMol viewing.
+          $ USalign structure1.pdb structure2.pdb -rasmol sup
+          $ rasmol -script sup               # C-alpha trace aligned region
+          $ rasmol -script sup_all           # C-alpha trace whole chain
+          $ rasmol -script sup_atm           # full-atom aligned region
+          $ rasmol -script sup_all_atm       # full-atom whole chain
+          $ rasmol -script sup_all_atm_lig   # full-atom with all molecules
+
+Example usages ('gunzip' program is needed to read .gz compressed files):
+    USalign 101m.cif.gz 1mba.pdb             # pairwise monomeric protein alignment
+    USalign 1qf6.cif 5yyn.pdb.gz -mol RNA    # pairwise monomeric RNA alignment
+    USalign model.pdb native.pdb -TMscore 1  # calculate TM-score between two conformations of a monomer
+    USalign 4v4a.cif 4v49.cif -mm 1 -ter 1   # oligomeric alignment for asymmetic units
+    USalign 3ksc.pdb1 4lej.pdb1 -mm 1 -ter 0 # oligomeric alignment for biological units
+    USalign 1ajk.pdb.gz 2ayh.pdb.gz -mm 3    # circular permutation alignment
+
+Additional options:
+      -v  Print the version of US-align
+
+      -a  TM-score normalized by the average length of two structures
+          T or F, (default F). -a does not change the final alignment.
+
+   -fast  Fast but slightly inaccurate alignment
+
+    -dir  Perform all-against-all alignment among the list of PDB
+          chains listed by 'chain_list' under 'chain_folder'.
+          $ USalign -dir chain_folder/ chain_list
+
+   -dir1  Use chain2 to search a list of PDB chains listed by 'chain1_list'
+          under 'chain1_folder'.
+          $ USalign -dir1 chain1_folder/ chain1_list chain2
+
+   -dir2  Use chain1 to search a list of PDB chains listed by 'chain2_list'
+          under 'chain2_folder'
+          $ USalign chain1 -dir2 chain2_folder/ chain2_list
+
+ -suffix  (Only when -dir1 and/or -dir2 are set, default is empty)
+          add file name suffix to files listed by chain1_list or chain2_list
+
+   -atom  4-character atom name used to represent a residue.
+          Default is " C3'" for RNA/DNA and " CA " for proteins
+          (note the spaces before and after CA).
+
+  -split  Whether to split PDB file into multiple chains
+           0: treat the whole structure as one single chain
+           1: treat each MODEL as a separate chain
+           2: (default) treat each chain as a separate chain
+
+ -outfmt  Output format
+           0: (default) full output
+           1: fasta format compact output
+           2: tabular format very compact output
+          -1: full output, but without version or citation information
+
+  -TMcut  -1: (default) do not consider TMcut
+          Values in [0.5,1): Do not proceed with TM-align for this
+          structure pair if TM-score is unlikely to reach TMcut.
+          TMcut is normalized as set by -a option:
+          -2: normalized by longer structure length
+          -1: normalized by shorter structure length
+           0: (default, same as F) normalized by second structure
+           1: same as T, normalized by average structure length
+
+ -mirror  Whether to align the mirror image of input structure
+           0: (default) do not align mirrored structure
+           1: align mirror of Structure_1 to origin Structure_2,
+              which usually requires the '-het 1' option:
+              $ USalign 4glu.pdb 3p9w.pdb -mirror 1 -het 1
+
+    -het  Whether to align residues marked as 'HETATM' in addition to 'ATOM  '
+           0: (default) only align 'ATOM  ' residues
+           1: align both 'ATOM  ' and 'HETATM' residues
+           2: align both 'ATOM  ' and MSE residues
+
+   -full  Whether to show full pairwise alignment of individual chains for
+          -mm 2 or 4. T or F, (default F)
+
+   -se    Do not perform superposition. Useful for extracting alignment from
+          superposed structure pairs
+
+ -infmt1  Input format for structure_1
+ -infmt2  Input format for structure_2
+          -1: (default) automatically detect PDB or PDBx/mmCIF format
+           0: PDB format
+           1: SPICKER format
+           3: PDBx/mmCIF format
+
+Advanced usage 1 (generate an image for a pair of superposed structures):
+    USalign 1cpc.pdb 1mba.pdb -o sup
+    pymol -c -d @sup_all_atm.pml -g sup_all_atm.png
+
+Advanced usage 2 (a quick search of query.pdb against I-TASSER PDB library):
+    wget https://zhanggroup.org/library/PDB.tar.bz2
+    tar -xjvf PDB.tar.bz2
+    USalign query.pdb -dir2 PDB/ PDB/list -suffix .pdb -outfmt 2 -fast
